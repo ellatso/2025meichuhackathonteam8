@@ -1,0 +1,16 @@
+{
+  "name": "GLIDE-Lite",
+  "short_name": "GLIDE-Lite",
+  "description": "智慧交通信號控制系統",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

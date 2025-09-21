@@ -1,0 +1,73 @@
+{
+  "name": "glide-lite-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "GLIDE-Lite 幹道綠波系統前端",
+  "keywords": ["traffic", "signal", "control", "glide", "tsp", "sumo"],
+  "author": "GLIDE-Lite Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext js,jsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,css,md}\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "clean": "rm -rf dist node_modules .vite",
+    "analyze": "npm run build && npx vite-bundle-analyzer dist/stats.html"
+    
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "axios": "^1.6.2",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.294.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.8",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "prettier": "^3.1.1",
+    "prettier-plugin-tailwindcss": "^0.5.7",
+    "vitest": "^1.0.4",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/jest-dom": "^6.1.5",
+    "jsdom": "^23.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/glide-lite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/glide-lite/issues"
+  },
+  "homepage": "https://github.com/your-org/glide-lite#readme"
+}

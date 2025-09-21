@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高密度交通流量 GLIDE 模擬系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #1e293b;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        
+        .control-group input, .control-group select {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .simulation-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .simulation-area {
+            margin-bottom: 30px;
+        }
+        
+        #canvas {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .speed-control label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .speed-control select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+        }
+        
+        #frameInfo {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .result-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .result-card h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        .kpi-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid #000;
+        }
+        
+        .event-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+        }
+        
+        .event-extend {
+            background: #dcfce7;
+            border-left-color: #22c55e;
+        }
+        
+        .event-hold {
+            background: #fef3c7;
+            border-left-color: #eab308;
+        }
+        
+        .event-tsp {
+            background: #dbeafe;
+            border-left-color: #3b82f6;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            .simulation-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .playback-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚦 高密度交通流量 GLIDE 模擬系統</h1>
+            <p>智能交通信號控制與公車優先系統 - 多路口大型模擬</p>
+        </div>
+        
+        <div class="control-panel">
+            <div class="control-group">
+                <label for="cycle">時制週期 (秒)</label>
+                <input type="number" id="cycle" value="90" min="60" max="180" step="10">
+            </div>
+            <div class="control-group">
+                <label for="speed">巡航速度 (km/h)</label>
+                <input type="number" id="speed" value="50" min="30" max="70" step="5">
+            </div>
+            <div class="control-group">
+                <label for="steps">模擬時長 (步)</label>
+                <input type="number" id="steps" value="300" min="180" max="600" step="30">
+            </div>
+            <div class="control-group">
+                <label for="busFlow">公車班距 (秒)</label>
+                <input type="number" id="busFlow" value="120" min="60" max="300" step="30">
+            </div>
+        </div>
+        <div class="control-group">
+  <label for="carsVph">
+    車流量 (單向/單線, vph)：
+    <span id="carsVphVal">1700</span>
+  </label>
+  <input
+    type="range"
+    id="carsVph"
+    min="600"
+    max="2200"
+    step="50"
+    value="1700"
+    oninput="document.getElementById('carsVphVal').textContent=this.value"
+  >
+</div>
+        <div class="simulation-buttons">
+            <button class="btn btn-primary" onclick="runSimulation('fixed')" id="btn-fixed">
+                🔒 固定時制模式
+            </button>
+            <button class="btn btn-success" onclick="runSimulation('glide')" id="btn-glide">
+                🌊 GLIDE 綠波模式
+            </button>
+            <button class="btn btn-warning" onclick="runSimulation('glide_tsp')" id="btn-tsp">
+                🚌 GLIDE + TSP 模式
+            </button>
+            <button class="btn btn-info" onclick="runDemoSequence()" id="btn-demo">
+                🎬 自動展示序列
+            </button>
+        </div>
+
+        <!-- 🚌 公車系統設定 -->
+<div class="control-group">
+  <label for="headwayMin">目標班距 (分鐘)</label>
+  <input type="number" id="headwayMin" value="6" min="2" max="20" step="1">
+</div>
+<div class="control-group">
+  <label for="toleranceMin">容忍範圍 (分鐘)</label>
+  <input type="number" id="toleranceMin" value="2" min="1" max="10" step="1">
+</div>
+<div class="control-group">
+  <label for="dwellSec">站點停留 (秒)</label>
+  <input type="number" id="dwellSec" value="20" min="5" max="60" step="5">
+</div>
+
+<!-- ⚙️ TSP 控制參數 -->
+<div class="control-group">
+  <label for="tspExtend">最大延綠 (秒)</label>
+  <input type="number" id="tspExtend" value="10" min="0" max="30" step="1">
+</div>
+<div class="control-group">
+  <label for="tspHold">最大保留 (秒)</label>
+  <input type="number" id="tspHold" value="30" min="0" max="60" step="5">
+</div>
+<div class="control-group">
+  <label for="tspCooldown">冷卻時間 (秒)</label>
+  <input type="number" id="tspCooldown" value="120" min="0" max="600" step="10">
+</div>
+
+<!-- 其他開關 -->
+<div class="control-group">
+  <label>⚠️ 模擬群聚問題</label>
+  <select id="cbSimBunching">
+    <option value="on" selected>開啟</option>
+    <option value="off">關閉</option>
+  </select>
+</div>
+<div class="control-group">
+  <label>✅ Anti-Bunching 解決方案</label>
+  <select id="cbAB">
+    <option value="on" selected>開啟</option>
+    <option value="off">關閉</option>
+  </select>
+</div>
+
+        
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3b82f6;"></div>
+                <span>普通車輛</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f97316;"></div>
+                <span>公車</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #22c55e;"></div>
+                <span>綠燈</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #eab308;"></div>
+                <span>黃燈</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ef4444;"></div>
+                <span>紅燈</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3b82f6; border: 2px solid #ef4444;"></div>
+                <span>公車站</span>
+            </div>
+        </div>
+        
+        <div class="simulation-area">
+            <canvas id="canvas" width="1600" height="460"></canvas>
+
+        </div>
+        
+        <div class="playback-controls">
+            <div class="speed-control">
+                <label>播放速度:</label>
+                <select id="playSpeed" onchange="updatePlaySpeed()">
+                    <option value="1000">1x (慢速)</option>
+                    <option value="500">2x (正常)</option>
+                    <option value="300" selected>3x (快速)</option>
+                    <option value="150">6x (很快)</option>
+                    <option value="100">10x (極快)</option>
+                </select>
+            </div>
+            <span id="frameInfo">等待模擬數據...</span>
+            <button class="btn btn-primary" onclick="togglePlayback()" id="playBtn" disabled>▶ 播放</button>
+            <button class="btn" onclick="resetPlayback()" id="resetBtn" disabled>⏹ 重置</button>
+        </div>
+        
+        <div class="results-grid">
+            <div class="result-card" id="kpiCard" style="display: none;">
+                <h3>📊 性能指標 (KPI)</h3>
+                <div class="kpi-grid" id="kpiResult"></div>
+            </div>
+            
+            <div class="result-card" id="eventsCard" style="display: none;">
+                <h3>🚨 系統事件</h3>
+                <div id="eventsResult"></div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+      function updateFrameInfoText() {
+        const total = Array.isArray(currentFrames) ? currentFrames.length : 0;
+        const cur = Number.isFinite(currentFrame) ? currentFrame + 1 : (total ? 1 : 0);
+      document.getElementById('frameInfo').textContent = `${cur} / ${total} 幀`;
+    }
+        const API_BASE = 'http://localhost:8001';
+
+
+        
+        let currentSimulation = null;
+        let currentFrames = [];
+        let currentFrame = 0;
+        let isPlaying = false;
+        let animationInterval = null;
+        let currentPlaySpeed = 300;
+        
+
+        function updateFrameInfoText() {
+  const total = Array.isArray(currentFrames) ? currentFrames.length : 0;
+  const cur = Number.isFinite(currentFrame) ? currentFrame + 1 : (total ? 1 : 0);
+  document.getElementById('frameInfo').textContent = `${cur} / ${total} 幀`;
+}
+
+
+
+      const ROAD = { y: 230, laneSpacing: 13, lanes: 3 }; // 中線 y=230，3 車道，間距 13px
+function laneCenterById(id) {
+  // 穩定把同一車輛分配到某一條車道
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  const lane = Math.abs(h) % ROAD.lanes;                  // 0,1,2
+  const offset = (lane - Math.floor((ROAD.lanes - 1) / 2)) * ROAD.laneSpacing; // -13, 0, +13
+  return ROAD.y + offset;
+}
+        
+
+        const WORLD = { min: -900, max: 900 };
+function wx(x) {
+  const c = document.getElementById('canvas');
+  const L = 80, R = c.width - 80;
+  return L + (x - WORLD.min) * (R - L) / (WORLD.max - WORLD.min);
+}
+
+
+function displayMonitor(m) {
+  // 1) 先拿元素；如果沒有就動態建立整張卡片，避免 null.style 當掉
+  let card = document.getElementById('monitorCard');
+  let linesBox = document.getElementById('monitorLines');
+  let stopsBox = document.getElementById('monitorStops');
+
+  if (!card) {
+    // 動態補上監控卡片（萬一 HTML 沒放）
+    const grid = document.querySelector('.results-grid') || document.body;
+    card = document.createElement('div');
+    card.className = 'result-card';
+    card.id = 'monitorCard';
+    card.style.display = 'none';
+    card.innerHTML = `
+      <h3>🚌 公車監控（各路線）</h3>
+      <div id="monitorLines"></div>
+      <h3 style="margin-top:16px;">🛑 各站狀況</h3>
+      <div id="monitorStops"></div>
+    `;
+    grid.appendChild(card);
+    linesBox = document.getElementById('monitorLines');
+    stopsBox = document.getElementById('monitorStops');
+  }
+
+  if (!linesBox || !stopsBox) {
+    console.warn('[monitor] 容器缺少，略過渲染'); 
+    return;
+  }
+
+  // 2) 顯示卡片
+  card.style.display = 'block';
+
+  // 3) 各路線監控（含 TSP / HOLD / queue）
+  const lines = Object.entries(m?.lines || {});
+  if (lines.length === 0) {
+    linesBox.innerHTML = '<div style="color:#64748b">無路線資料</div>';
+  } else {
+    linesBox.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:13px">
+        <thead>
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #e5e7eb; padding:6px">路線</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">排定班距(s)</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">觀測班距(s)</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">班距σ</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">準點率(%)</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">TSP延綠</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">HOLD</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">站前排隊</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lines.map(([lid, s]) => `
+            <tr>
+              <td style="padding:6px">${lid}</td>
+              <td style="padding:6px; text-align:right">${s.scheduled_headway_sec ?? '—'}</td>
+              <td style="padding:6px; text-align:right">${s.observed_headway_avg ?? '—'}</td>
+              <td style="padding:6px; text-align:right">${s.observed_headway_std ?? '—'}</td>
+              <td style="padding:6px; text-align:right">${s.on_time_pct ?? '—'}</td>
+              <td style="padding:6px; text-align:right">${s.tsp_extends ?? 0}</td>
+              <td style="padding:6px; text-align:right">${s.holds ?? 0}</td>
+              <td style="padding:6px; text-align:right">${s.queue_holds ?? 0}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // 4) 各站監控
+  const stops = Object.entries(m?.stops || {});
+  if (stops.length === 0) {
+    stopsBox.innerHTML = '<div style="color:#64748b">無站點資料</div>';
+  } else {
+    stopsBox.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:13px">
+        <thead>
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #e5e7eb; padding:6px">站名</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">到站數</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">平均停站(s)</th>
+            <th style="text-align:right; border-bottom:1px solid #e5e7eb; padding:6px">同時排隊峰值</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stops.map(([name, s]) => `
+            <tr>
+              <td style="padding:6px">${name}</td>
+              <td style="padding:6px; text-align:right">${s.arrivals ?? 0}</td>
+              <td style="padding:6px; text-align:right">${(s.avg_dwell ?? 0).toFixed(1)}</td>
+              <td style="padding:6px; text-align:right">${s.queue_max ?? 0}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+}
+
+        // 增強版模擬運行函數
+        async function runSimulation(mode) {
+            const buttons = ['btn-fixed', 'btn-glide', 'btn-tsp', 'btn-demo'];
+            buttons.forEach(id => document.getElementById(id).disabled = true);
+            
+            try {
+                const cycle = parseInt(document.getElementById('cycle').value);
+const speed = parseFloat(document.getElementById('speed').value);
+const steps = parseInt(document.getElementById('steps').value);
+const busFlow = parseInt(document.getElementById('busFlow').value); // 保留不用也可
+const carsVph = parseInt(document.getElementById('carsVph').value); // 新增
+
+
+// NEW: 取新控制面板的值（分鐘轉秒）
+const headwayMin   = +document.getElementById('headwayMin').value;
+const toleranceMin = +document.getElementById('toleranceMin').value;
+const dwellSec     = +document.getElementById('dwellSec').value;
+const tspExtend    = +document.getElementById('tspExtend').value;
+const tspHold      = +document.getElementById('tspHold').value;
+const tspCooldown  = +document.getElementById('tspCooldown').value;
+const simulateBunching = document.getElementById('cbSimBunching').value === 'on';
+const antiBunching     = document.getElementById('cbAB').value === 'on';
+
+
+                document.getElementById('frameInfo').textContent = '正在運行模擬...';
+                
+                const response = await fetch(`${API_BASE}/glide/sim`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+  mode,
+  cycle,
+  v_prog_kmh: speed,
+  steps,
+  cars_per_hour: carsVph,
+  // ★ 加上公車與 TSP 參數（沒有控制項就吃預設）
+  bus_headway_sec: (document.getElementById('headwayMin')?.value
+      ? Number(document.getElementById('headwayMin').value) * 60
+      : 300),                      // 沒有控件就 5 分/班
+  ab_tolerance_sec: (document.getElementById('toleranceMin')?.value
+      ? Number(document.getElementById('toleranceMin').value) * 60
+      : 120),                      // ±2 分
+  dwell_sec: (document.getElementById('dwellSec')?.value
+      ? Number(document.getElementById('dwellSec').value)
+      : 10),                       // ★ 沒控件就固定 10 秒進站停留
+// …保持你原本其他欄位…
+simulate_bunching: document.getElementById('cbSimBunching').value === 'on',
+anti_bunching: document.getElementById('cbAB').value === 'on',
+
+
+  tsp: {
+    max_extend_sec:  (document.getElementById('tspExtend')?.value ? Number(document.getElementById('tspExtend').value) : 10),
+    max_hold_sec:    (document.getElementById('tspHold')?.value   ? Number(document.getElementById('tspHold').value)   : 30),
+    cooldown_sec:    (document.getElementById('tspCooldown')?.value ? Number(document.getElementById('tspCooldown').value) : 120),
+  }
+})
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+
+                const data = await response.json();
+                console.log('Simulation response:', data);
+                
+                currentSimulation = data;
+                currentFrames = data.frames || [];
+                currentFrame = 0;
+                updateFrameInfoText();
+
+                if (data.monitor) displayMonitor(data.monitor);
+
+                // 顯示 KPI
+                if (data.kpis) {
+                    displayKPIs(data.kpis);
+                }
+                
+                // 顯示事件
+                if (data.events && Array.isArray(data.events) && data.events.length > 0) {
+                    displayEvents(data.events);
+                } else {
+                    document.getElementById('eventsCard').style.display = 'none';
+                }
+                
+                // 準備動畫
+                if (currentFrames.length > 0) {
+                    document.getElementById('frameInfo').textContent = `1 / ${currentFrames.length} 幀`;
+                    document.getElementById('playBtn').disabled = false;
+                    document.getElementById('resetBtn').disabled = false;
+                    drawFrame(currentFrames[0]);
+                } else {
+                    document.getElementById('frameInfo').textContent = '無動畫數據';
+                }
+                
+            } catch (error) {
+                console.error('Simulation error:', error);
+                alert('模擬失敗: ' + error.message);
+                document.getElementById('frameInfo').textContent = '模擬失敗';
+            } finally {
+                buttons.forEach(id => document.getElementById(id).disabled = false);
+            }
+        }
+        
+        // 顯示 KPI
+        function displayKPIs(kpis) {
+  document.getElementById('kpiCard').style.display = 'block';
+  const v = (x, d=1, suf='') => (typeof x === 'number' ? x.toFixed(d) + suf : '—');
+
+  const rows = [
+    {label:'控制模式', val: kpis.mode ?? '—'},
+    {label:'估計流量 (vph)', val: kpis.estimated_vph ?? '—'},
+    {label:'平均放行頭距', val: v(kpis.avg_discharge_headway_s,2,'s')},
+    {label:'進帶率(零停車率)', val: (typeof kpis.progression_rate==='number' ? (kpis.progression_rate*100).toFixed(1)+'%' : '—')},
+    {label:'平均停次/車', val: v(kpis.avg_stops_main,2,' 次')},
+    {label:'平均信號延滯/車', val: v(kpis.avg_delay_main,1,'s')},
+    {label:'平均旅行時間', val: v(kpis.avg_travel_time_s,1,'s')},
+    {label:'通過車輛', val: kpis.total_arrived ?? '—'},
+    {label:'TSP 延綠事件', val: kpis.tsp_events ?? 0},
+    {label:'BUS HOLD 事件', val: kpis.bus_hold_events ?? 0},
+  ];
+
+  document.getElementById('kpiResult').innerHTML =
+    rows.map(r => `
+      <div class="kpi-item">
+        <div class="kpi-value">${r.val}</div>
+        <div class="kpi-label">${r.label}</div>
+      </div>
+    `).join('');
+}
+
+        
+        // 顯示事件
+        function displayEvents(events) {
+            if (!events || !Array.isArray(events)) {
+                console.log('No events to display');
+                return;
+            }
+            
+            document.getElementById('eventsCard').style.display = 'block';
+            const eventsToShow = events.slice(-15); // 顯示最後 15 個事件
+            
+            if (eventsToShow.length === 0) {
+                document.getElementById('eventsResult').innerHTML = 
+                    '<div style="color: #64748b; text-align: center; padding: 20px;">尚無系統事件</div>';
+                return;
+            }
+            
+            document.getElementById('eventsResult').innerHTML = eventsToShow.map(event => {
+                let eventClass = 'event-item';
+                let icon = '📝';
+                
+                if (event.type === 'TSP_EXTEND') {
+                    eventClass += ' event-extend';
+                    icon = '🟢';
+                } else if (event.type === 'BUS_HOLD') {
+                    eventClass += ' event-hold'; 
+                    icon = '🟡';
+                } else if (event.type.includes('TSP')) {
+                    eventClass += ' event-tsp';
+                    icon = '🚌';
+                }
+                
+                return `
+                    <div class="${eventClass}">
+                        <strong>${icon} ${event.type === 'TSP_EXTEND' ? '延綠' : 
+                                       event.type === 'BUS_HOLD' ? '公車保留' : event.type}</strong>
+                        @ ${event.node || event.location || '系統'}
+                        <div style="font-size: 0.85rem; margin-top: 4px; opacity: 0.8;">
+                            ${event.reason || event.description || ''} 
+                            (t=${event.t}s, 持續${event.sec || event.duration || 0}s)
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 增強版繪圖函數
+        function drawFrame(frame) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 清空畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawRoadNetwork(ctx);
+            drawIntersections(ctx, frame.signals);
+            drawBusStops(ctx);
+            drawVehicles(ctx, frame.vehicles);
+            drawTrafficInfo(ctx, frame);
+        }
+        
+        function drawRoadNetwork(ctx) {
+  // 主幹道
+  const y = ROAD.y, h = 44;
+  ctx.fillStyle = '#374151';
+  ctx.fillRect(wx(WORLD.min), y - h/2, wx(WORLD.max) - wx(WORLD.min), h);
+
+  // 車道虛線
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([15, 15]);
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(wx(WORLD.min), y + i * 13);
+    ctx.lineTo(wx(WORLD.max), y + i * 13);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // 垂直道路（以後端 nodes 為準）
+  const nodes = [
+    {id:'J1', name:'大學路口', x:-600},
+    {id:'J2', name:'光復路口(園區)', x:-300},
+    {id:'J3', name:'中正路口', x:0},
+    {id:'J4', name:'民族路口', x:300},
+    {id:'J5', name:'竹北側路口', x:600},
+  ];
+  ctx.fillStyle = '#374151';
+  nodes.forEach(n => {
+    const cx = wx(n.x);
+    ctx.fillRect(cx - 20, y - 70, 40, 140);
+    // 垂直虛線
+    ctx.strokeStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx - 7, y - 70);
+    ctx.lineTo(cx - 7, y + 70);
+    ctx.moveTo(cx + 7, y - 70);
+    ctx.lineTo(cx + 7, y + 70);
+    ctx.stroke();
+  });
+}
+        
+function drawIntersections(ctx, signals) {
+  const map = {
+    'J1': {x:-600, name:'大學路口'},
+    'J2': {x:-300, name:'光復路口(園區)'},
+    'J3': {x:   0, name:'中正路口'},
+    'J4': {x: 300, name:'民族路口'},
+    'J5': {x: 600, name:'竹北側路口'},
+  };
+  const y = ROAD.y;
+  const colorOf = s => ({'G':'#22c55e','y':'#eab308','r':'#ef4444'}[s] || '#ef4444');
+
+  signals?.forEach(s => {
+    const m = map[s.node]; if (!m) return;
+    const cx = wx(m.x);
+
+    // 路口底
+    ctx.fillStyle = '#4b5563';
+    ctx.fillRect(cx - 25, y - 25, 50, 50);
+
+    // EW/NS 狀態：EW 為 s.state；NS 與 EW 互斥（EW=G/y → NS=r；EW=r → NS=G）
+    const ewState = s.state;
+    const nsState = (ewState === 'r') ? 'G' : 'r';
+
+    // 畫四顆燈：左右(EW)同色、上下(NS)同色
+    const ewDirs = [{x:cx-45,y:y},{x:cx+45,y:y}];
+    const nsDirs = [{x:cx,y:y-45},{x:cx,y:y+45}];
+
+    // 機殼
+    ctx.fillStyle = '#1f2937';
+    [...ewDirs, ...nsDirs].forEach(d => ctx.fillRect(d.x-8, d.y-12, 16, 24));
+
+    // 燈色
+    ctx.fillStyle = colorOf(ewState);
+    ewDirs.forEach(d => { ctx.beginPath(); ctx.arc(d.x, d.y, 7, 0, Math.PI*2); ctx.fill(); });
+
+    ctx.fillStyle = colorOf(nsState);
+    nsDirs.forEach(d => { ctx.beginPath(); ctx.arc(d.x, d.y, 7, 0, Math.PI*2); ctx.fill(); });
+
+    // 標籤
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(m.name, cx, y - 85);
+    ctx.fillText(s.node, cx, y - 70);
+  });
+}
+
+        
+        function drawBusStops(ctx) {
+  const yTop = 160;
+  const stops = [
+    {x:-450, name:'科學園區站'},
+    {x: 450, name:'竹北第一站'},
+  ];
+  stops.forEach(st => {
+    const cx = wx(st.x);
+    // 站台
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(cx - 30, yTop, 60, 20);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('BUS STOP', cx, yTop + 12);
+    // 名稱
+    ctx.fillStyle = '#000';
+    ctx.font = '11px Arial';
+    ctx.fillText(st.name, cx, yTop - 8);
+    // 等候區框線
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cx - 35, yTop + 20, 70, 16);
+  });
+}
+        
+        function drawVehicles(ctx, vehicles) {
+            if (!vehicles || vehicles.length === 0) return;
+            
+            vehicles.forEach(vehicle => {
+                // 座標映射：SUMO [-500, 500] -> Canvas [100, 1100]
+                //const canvasX = 100 + (vehicle.x + 500) * 1000 / 1000;
+                const canvasX = wx(vehicle.x);
+const isBus = vehicle.kind === 'bus';
+// 公車固定走中線；小客車按 id 分配車道，再加一點抖動（後端給的 vehicle.y 為 -2~+2）
+const baseY = isBus ? ROAD.y : laneCenterById(vehicle.id);
+const canvasY = baseY + (vehicle.y || 0);
+                
+                const L = wx(WORLD.min), R = wx(WORLD.max);
+if (canvasX < L - 2 || canvasX > R + 2) return;
+                
+                // 車輛尺寸和顏色
+                //const isBus = vehicle.kind === 'bus';
+                const width = isBus ? 24 : 14;
+                const height = isBus ? 10 : 8;
+                const color = isBus ? '#f97316' : '#3b82f6';
+                
+                // 車輛陰影
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(canvasX - width/2 + 2, canvasY - height/2 + 2, width, height);
+                
+                // 車輛主體
+                ctx.fillStyle = color;
+                ctx.fillRect(canvasX - width/2, canvasY - height/2, width, height);
+                
+                // 停車狀態指示
+                if (vehicle.stopped) {
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(canvasX - width/2 - 1, canvasY - height/2 - 1, width + 2, height + 2);
+                }
+                
+                // 公車在站停車指示
+                if (vehicle.stopped_at_station) {
+                    ctx.fillStyle = '#10b981';
+                    ctx.beginPath();
+                    ctx.arc(canvasX, canvasY - 15, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 8px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('STOP', canvasX, canvasY - 13);
+                }
+                
+                // 車輛標示
+                if (isBus) {
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(canvasX - 10, canvasY - 6, 20, 12);  // 放大
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 10px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('BUS', canvasX, canvasY + 3);
+} else {
+  ctx.fillStyle = '#3b82f6';
+  ctx.fillRect(canvasX - 7, canvasY - 4, 14, 8);
+}
+            });
+        }
+        
+        function drawTrafficInfo(ctx, frame) {
+            // 顯示詳細統計
+            ctx.fillStyle = '#000';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'left';
+            
+            const cars = frame.vehicles?.filter(v => v.kind === 'car').length || 0;
+            const buses = frame.vehicles?.filter(v => v.kind === 'bus').length || 0;
+            const stopped = frame.vehicles?.filter(v => v.stopped).length || 0;
+            
+            ctx.fillText(`⏰ 時間: ${frame.t}s | 🚗 車輛: ${cars} 汽車, ${buses} 公車 | 🛑 停車: ${stopped} 台`, 60, 30);
+            
+            // 即時 KPI
+            if (currentSimulation?.kpis) {
+                const kpis = currentSimulation.kpis;
+                ctx.fillText(`🎯 ${kpis.mode} 模式 | 📈 進帶率: ${(kpis.progression_rate * 100).toFixed(1)}% | ⏱️ 平均停等: ${kpis.avg_stops_main}`, 60, 50);
+            }
+            if (typeof carsVph !== 'undefined') {
+  ctx.fillText(`🚦 目標車流量: ${document.getElementById('carsVph').value} vph`, 60, 70);
+}
+        }
+        
+        // 播放控制
+        function togglePlayback() {
+            if (!currentFrames || currentFrames.length === 0) {
+                alert('沒有可播放的動畫數據');
+                return;
+            }
+            
+            const btn = document.getElementById('playBtn');
+            if (isPlaying) {
+                clearInterval(animationInterval);
+                isPlaying = false;
+                btn.textContent = '▶ 播放';
+            } else {
+                isPlaying = true;
+                btn.textContent = '⏸ 暫停';
+                animationInterval = setInterval(() => {
+                    if (currentFrame >= currentFrames.length - 1) {
+                        togglePlayback();
+                        return;
+                    }
+                    currentFrame++;
+                    drawFrame(currentFrames[currentFrame]);
+                    updateFrameInfoText();
+                }, currentPlaySpeed);
+            }
+        }
+        
+        function resetPlayback() {
+            if (!currentFrames || currentFrames.length === 0) return;
+            
+            clearInterval(animationInterval);
+            isPlaying = false;
+            currentFrame = 0;
+            document.getElementById('playBtn').textContent = '▶ 播放';
+            drawFrame(currentFrames[0]);
+            document.getElementById('frameInfo').textContent = `1 / ${currentFrames.length} 幀`;
+        }
+        
+        function updatePlaySpeed() {
+            currentPlaySpeed = parseInt(document.getElementById('playSpeed').value);
+            
+            if (isPlaying) {
+                clearInterval(animationInterval);
+                animationInterval = setInterval(() => {
+                    if (currentFrame >= currentFrames.length - 1) {
+                        togglePlayback();
+                        return;
+                    }
+                    currentFrame++;
+                    drawFrame(currentFrames[currentFrame]);
+                    updateFrameInfoText();
+                }, currentPlaySpeed);
+            }
+        }
+        
+        
+
+        // 自動展示序列
+        async function runDemoSequence() {
+            const modes = [
+                { mode: 'fixed', name: '固定時制' },
+                { mode: 'glide', name: 'GLIDE 綠波' },
+                { mode: 'glide_tsp', name: 'GLIDE + TSP' }
+            ];
+            
+            document.getElementById('btn-demo').disabled = true;
+            document.getElementById('btn-demo').textContent = '🎬 展示中...';
+            
+            for (let i = 0; i < modes.length; i++) {
+                console.log(`Running demo ${i + 1}/${modes.length}: ${modes[i].name}`);
+                await runSimulation(modes[i].mode);
+                
+                if (i < modes.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+            }
+            
+            document.getElementById('btn-demo').disabled = false;
+            document.getElementById('btn-demo').textContent = '🎬 自動展示序列';
+            alert('🎉 展示序列完成！您可以看到三種模式的效果對比。');
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('高密度交通模擬系統已加載');
+            drawFrame({
+                t: 0,
+                signals: [
+                    { node: 'J1', state: 'r' },
+                    { node: 'J2', state: 'r' },
+                    { node: 'J3', state: 'r' }
+                ],
+                vehicles: []
+            });
+        });
+    </script>
+</body>
+</html>
